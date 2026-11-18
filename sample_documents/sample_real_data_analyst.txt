@@ -1,0 +1,5 @@
+Job Title: Junior Data Analyst & Python Developer
+Company: Soliton Enterprise Analytics
+Company Profile: Soliton Enterprise Analytics builds industrial IoT and automated testing analytics solutions for global manufacturing clients.
+Requirements: B.Tech / B.E. degree in Artificial Intelligence, Data Science, or Computer Science. Proficiency in Python, Pandas, SQL, data preprocessing, and statistical visualization. Strong communication skills for collaborating with engineering stakeholders.
+Benefits: Comprehensive medical insurance, provident fund, mentorship program, flexible hours, paid leave, and annual performance bonus.

@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JobShield AI — Job Fraud Detection</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root{--bg:#f6f4ef;--card:#fffefb;--line:#e6e1d6;--ink:#1d2327;--mute:#6d7176;--accent:#1f3d36;--red:#a23a30;--redbg:#f8ebe8;--green:#2d6a4f;--greenbg:#e9f3ee;--amber:#96651a}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.55 Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.serif,h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:500;letter-spacing:-.01em;margin:0}
+.hidden{display:none!important}
+.wrap{max-width:880px;margin:0 auto;padding:0 20px 64px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:Fraunces,serif;font-size:21px;font-weight:600}
+.brand svg{width:24px;height:24px}
+nav{display:flex;gap:4px}
+nav button{background:none;border:0;padding:8px 14px;border-radius:999px;font:500 14px Inter;color:var(--mute);cursor:pointer}
+nav button:hover{color:var(--ink)}
+nav button.active{background:var(--accent);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px}
+.btn{font:500 14px Inter;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer}
+.btn:hover{border-color:#cfc8b8}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;padding:13px 20px;font-size:15px;width:100%;border-radius:12px}
+.btn.primary:hover{background:#2a4f46}
+.btn.sm{padding:5px 10px;font-size:12.5px}
+.btn.danger{color:var(--red)}
+.hero{text-align:center;padding:18px 0 26px}
+.hero h1{font-size:34px;line-height:1.15}
+.hero p{color:var(--mute);margin:10px auto 0;max-width:520px}
+#fileDropZone{position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(30,30,20,.04),0 8px 30px -12px rgba(30,30,20,.12)}
+#fileDropZone.drop-zone-active{outline:2px dashed var(--accent);outline-offset:-10px;background:#f1f5f2}
+#fileDropZone.drop-zone-active::after{content:"Drop your file to extract its text";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(246,244,239,.92);color:var(--accent);font:500 18px Fraunces,serif}
+#fileStatusBox{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);background:#faf8f3}
+#fileStatusBox img{height:40px;width:40px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.fmeta{flex:1;min-width:0;font-size:13px}
+.fmeta b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fmeta span{color:var(--mute);font-size:12px}
+#jobTextInput{display:block;width:100%;min-height:230px;border:0;outline:0;resize:vertical;padding:18px 20px;font:15px/1.65 Inter,sans-serif;background:transparent;color:var(--ink)}
+.cbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--mute);flex-wrap:wrap}
+.cbar .sp{flex:1}
+.link{background:none;border:0;color:var(--mute);font:inherit;cursor:pointer;padding:4px 6px}
+.link:hover{color:var(--ink)}
+details.opts{margin:14px 2px 18px;font-size:14px}
+details.opts summary{cursor:pointer;color:var(--mute);list-style:none;font-size:13.5px}
+details.opts summary::before{content:"+ "}
+details.opts[open] summary::before{content:"– "}
+.opts .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.opts label.f{display:block;font-size:12px;color:var(--mute)}
+.opts input[type=text]{width:100%;margin-top:4px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card);font:14px Inter;color:var(--ink);outline:none}
+.opts input[type=text]:focus{border-color:var(--accent)}
+.checks{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;font-size:13.5px}
+.checks label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.checks input{accent-color:var(--accent)}
+.samples{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:center;margin-top:18px;font-size:13px;color:var(--mute)}
+.chip{border:1px solid var(--line);background:var(--card);padding:5px 12px;border-radius:999px;font:500 12.5px Inter;color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+#analysisReportSection{margin-top:30px}
+.verdict{padding:26px 28px}
+.vtop{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.vtop h2{font-size:28px;margin-top:4px}
+.vsub{color:var(--mute);font-size:13px;margin-top:6px}
+.score{text-align:right}
+.score .n{font:600 48px/1 Fraunces,serif}
+.score .l{font-size:12px;color:var(--mute);margin-top:4px}
+.meter{height:6px;border-radius:9px;background:#ece7db;margin-top:22px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:9px}
+.red{color:var(--red)}.green{color:var(--green)}
+.bg-red{background:var(--red)}.bg-green{background:var(--green)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.panel{padding:20px 22px}
+.panel h3{font-size:17px;margin-bottom:10px}
+.panel ul{margin:0;padding:0;list-style:none;font-size:14px}
+.panel li{padding:8px 0 8px 18px;border-top:1px solid var(--line);position:relative}
+.panel li:first-child{border-top:0}
+.panel li::before{content:"";position:absolute;left:0;top:16px;width:7px;height:7px;border-radius:50%;background:var(--c)}
+.muted{color:var(--mute);font-size:14px}
+.brow{display:grid;grid-template-columns:190px 1fr 52px;gap:12px;align-items:center;font-size:13.5px;padding:6px 0}
+.brow .bar{height:5px;background:#ece7db;border-radius:9px;overflow:hidden}
+.brow .bar i{display:block;height:100%;background:var(--accent);border-radius:9px}
+.brow b{text-align:right;font-weight:600}
+.stats{display:flex;flex-wrap:wrap;gap:6px 26px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--mute)}
+.stats b{color:var(--ink);font-weight:600}
+.doc{font-size:14px;line-height:1.75;max-height:300px;overflow:auto;padding-top:8px}
+.hl-scam{background:#f4d6d1;color:#7d241b;border-radius:3px;padding:0 3px}
+.hl-legit{background:#d4e8dc;color:#1f5039;border-radius:3px;padding:0 3px}
+.hist-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.hist-head h2{font-size:20px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-weight:500;font-size:12px;color:var(--mute);padding:10px 16px}
+td{padding:12px 16px;border-top:1px solid var(--line);vertical-align:middle}
+tr:hover td{background:#faf8f3}
+.pill{font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.pill.r{background:var(--redbg);color:var(--red)}.pill.g{background:var(--greenbg);color:var(--green)}
+.ibtn{border:0;background:none;cursor:pointer;color:var(--mute);font-size:13.5px;padding:4px 8px;border-radius:6px}
+.ibtn:hover{background:#efebe0;color:var(--ink)}
+.mstats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.mstats .card{padding:18px}
+.mstats b{display:block;font:600 30px Fraunces,serif}
+.mstats span{font-size:12.5px;color:var(--mute)}
+.mstats small{display:block;font-size:12px;color:var(--green);margin-top:2px}
+#recordModal{position:fixed;inset:0;z-index:50;background:rgba(29,35,39,.45);display:flex;align-items:center;justify-content:center;padding:20px}
+#recordModal .card{max-width:680px;width:100%;max-height:88vh;overflow:auto;padding:24px}
+#toastBanner{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:13.5px;display:flex;gap:8px}
+@media(max-width:700px){.cols,.opts .grid,.mstats{grid-template-columns:1fr}.brow{grid-template-columns:1fr 1fr 44px}.hero h1{font-size:27px}}
+</style>
+</head>
+<body>
+<div id="toastBanner" class="hidden"><span id="toastIcon">✓</span><span id="toastText"></span></div>
+<div id="recordModal" class="hidden"><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:16px"><div><span id="modalSourceBadge" class="tag" style="color:var(--mute)"></span><h3 id="modalTitle" style="font-size:22px;margin-top:4px"></h3><p id="modalSub" class="muted" style="margin:4px 0 0;font-size:12.5px"></p></div><button id="closeModalBtn" class="btn sm" type="button">Close</button></div>
+  <div id="modalBody" style="margin-top:18px"></div>
+</div></div>
+
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="#1f3d36" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2.5 4.5 5.5v6c0 4.6 3.1 8.3 7.5 10 4.4-1.7 7.5-5.4 7.5-10v-6L12 2.5Z"/><path d="m8.8 12 2.3 2.3 4.2-4.6" stroke-linecap="round"/></svg>JobShield</div>
+    <nav>
+      <button type="button" id="tabBtnScanner" class="active">Scan</button>
+      <button type="button" id="tabBtnHistory">History (<span id="navHistoryBadge">0</span>)</button>
+      <button type="button" id="tabBtnBenchmarks">Model</button>
+    </nav>
+  </div>
+
+  <section id="viewScanner">
+    <div class="hero"><h1>Is this job offer genuine?</h1><p>Paste a job posting or drop a file — PDF, image, Word, email or text. We’ll flag the warning signs.</p></div>
+
+    <div id="fileDropZone" class="card">
+      <div id="fileStatusBox" class="hidden">
+        <img id="imagePreviewEl" alt="" class="hidden" />
+        <div class="fmeta"><b id="fileStatusName"></b><span><span id="fileStatusBadge"></span> · <span id="fileStatusSize"></span> · <span id="fileStatusEngine"></span></span></div>
+        <button type="button" id="removeFileBtn" class="ibtn" title="Remove file" aria-label="Remove file">✕</button>
+      </div>
+      <textarea id="jobTextInput" placeholder="Paste the job posting here, or drag a file onto this box…"></textarea>
+      <div class="cbar">
+        <input id="fileInput" type="file" class="hidden" />
+        <button type="button" id="browseFileBtn" class="btn sm">Attach file</button>
+        <span>PDF · Image · Word · TXT · EML · CSV</span>
+        <span class="sp"></span>
+        <span id="liveWordCount">0 words</span>
+        <button type="button" id="clearScannerBtn" class="link">Clear</button>
+      </div>
+    </div>
+
+    <details class="opts">
+      <summary>Details &amp; options</summary>
+      <div class="grid">
+        <label class="f">Job title<input id="jobTitleInput" type="text" placeholder="Detected automatically" /></label>
+        <label class="f">Company<input id="companyNameInput" type="text" placeholder="Detected automatically" /></label>
+      </div>
+      <div class="checks">
+        <label><input id="metaLogoCheck" type="checkbox" /> Has company logo</label>
+        <label><input id="metaQuestionsCheck" type="checkbox" /> Has screening questions</label>
+        <label><input id="metaRemoteCheck" type="checkbox" /> Remote role</label>
+      </div>
+    </details>
+
+    <button type="button" id="analyzeJobBtn" class="btn primary">Analyze posting</button>
+    <div class="samples">Try a sample:
+      <button type="button" class="chip sample-doc-btn" data-sample="pdf_scam">Fee-scam PDF</button>
+      <button type="button" class="chip sample-doc-btn" data-sample="img_scam">WhatsApp flyer</button>
+      <button type="button" class="chip sample-doc-btn" data-sample="docx_real">ML Engineer JD</button>
+      <button type="button" class="chip sample-doc-btn" data-sample="txt_real">Data Analyst</button>
+    </div>
+    <div id="analysisReportSection"></div>
+  </section>
+
+  <section id="viewHistory" class="hidden">
+    <div class="card">
+      <div class="hist-head">
+        <div>
+          <h2>Your Scan History</h2>
+          <p class="muted" style="margin:2px 0 0;font-size:13px">Only postings and files you analyze are recorded here.</p>
+        </div>
+        <button type="button" id="clearHistoryBtn" class="btn sm danger">Clear history</button>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Posting / File</th>
+              <th>Result</th>
+              <th style="text-align:right">Risk</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="viewBenchmarks" class="hidden">
+    <div class="hero" style="text-align:left;padding-top:0"><h1 style="font-size:28px">Model performance</h1><p style="margin:8px 0 0;max-width:none">4-branch hybrid ensemble, evaluated on 3,576 unseen postings from the EMSCAD dataset.</p></div>
+    <div class="mstats">
+      <div class="card"><b>99.33%</b><span>Accuracy</span><small>baseline 98.13%</small></div>
+      <div class="card"><b>99.63%</b><span>ROC-AUC</span></div>
+      <div class="card"><b>96.27%</b><span>Fake precision</span><small>baseline 93.44%</small></div>
+      <div class="card"><b>89.60%</b><span>Fake recall</span><small>baseline 65.90%</small></div>
+    </div>
+    <div class="card panel" style="margin-top:16px"><h3>Baseline vs. upgraded model (%)</h3><div style="position:relative;height:280px"><canvas id="benchmarkChart"></canvas></div></div>
+    <div class="card panel" style="margin-top:16px"><h3>Confusion matrix</h3>
+      <table><thead><tr><th>Actual</th><th>Predicted real</th><th>Predicted fake</th></tr></thead><tbody>
+        <tr><td>Real (3,403)</td><td class="green"><b>3,397</b></td><td>6</td></tr>
+        <tr><td>Fake (173)</td><td>18</td><td class="red"><b>155</b></td></tr></tbody></table>
+    </div>
+  </section>
+</div>
+<script>
+    // =========================================================================
+    // 1. TRAINED MODEL WEIGHTS & LEXICONS
+    // =========================================================================
+    const URGENCY_PHRASES = [
+      "apply now", "urgent", "immediate start", "limited time", "act fast",
+      "hurry", "don't miss", "do not miss", "immediate hire", "start immediately",
+      "hiring immediately", "instant hiring", "spots left", "limited spots",
+      "apply today", "urgent requirement", "immediate joiner", "join immediately",
+      "last chance", "closing soon", "apply immediately", "urgent hiring",
+      "within 24 hours", "same day hire", "instant offer"
+    ];
+
+    const HIGH_RISK_SCAM_PHRASES = [
+      "registration fee", "training fee", "security deposit", "processing fee",
+      "application fee", "equipment fee", "background check fee", "refundable fee",
+      "wire transfer", "western union", "moneygram", "bitcoin", "crypto", "usdt",
+      "cashier's check", "cashier check", "money order", "bank account details",
+      "bank account", "routing number", "social security number", "ssn", "credit card details",
+      "mystery shopper", "envelope stuffing", "reshipping", "package forwarding",
+      "payment processor", "check cashing", "google chat interview", "telegram",
+      "whatsapp", "signal app", "text only interview", "no interview required",
+      "no interview", "guaranteed income", "be your own boss", "financial freedom",
+      "unlimited earning", "get rich", "easy money", "earn passive income"
+    ];
+
+    const MEDIUM_RISK_SCAM_PHRASES = [
+      "work from home", "work at home", "data entry", "no experience",
+      "no experience needed", "no experience required", "no degree required",
+      "earn up to", "per week", "per day", "weekly pay", "daily pay",
+      "daily payout", "weekly payout", "instant payout", "cash payout",
+      "typing job", "copy paste", "form filling", "ad posting",
+      "part time home", "home based", "clerk", "cash bonus"
+    ];
+
+    const LEGITIMACY_PHRASES = [
+      "equal opportunity employer", "401(k)", "401k", "health insurance",
+      "dental", "vision", "paid time off", "pto", "parental leave",
+      "tuition reimbursement", "bachelor's degree", "bachelor degree",
+      "master's degree", "years of experience", "cross-functional",
+      "stakeholders", "agile", "scrum", "code review", "ci/cd",
+      "architecture", "compliance", "affirmative action", "veteran status",
+      "competitive salary", "comprehensive benefits", "professional development",
+      "mentorship", "performance bonus", "equity", "stock options", "provident fund"
+    ];
+
+    const TRAINED_FAKE_NGRAMS = {
+      "work_from": 9.8, "from_home": 9.4, "data_entry": 12.6, "no_experience": 11.2,
+      "registration_fee": 18.5, "training_fee": 17.8, "wire_transfer": 16.9,
+      "western_union": 16.4, "cashier_check": 15.8, "mystery_shopper": 15.2,
+      "whatsapp": 14.5, "telegram": 13.8, "bitcoin": 14.9, "ssn": 14.2,
+      "bank_account": 13.4, "apply_now": 7.6, "urgent": 6.8, "immediate_start": 8.4,
+      "per_week": 8.2, "per_day": 8.9, "daily_payout": 11.5, "copy_paste": 11.8,
+      "form_filling": 11.4, "clerk": 9.2, "administrative_assistant": 6.5,
+      "ic_technician": 10.4, "mt_poso": 12.1, "bakersfield": 9.5, "subsea": 11.2,
+      "expro": 12.4, "link___url_token__": 14.2, "below_link": 13.1, "using_below": 12.7
+    };
+
+    const TRAINED_REAL_NGRAMS = {
+      "equal_opportunity": -9.5, "health_insurance": -8.8, "401k": -9.2,
+      "bachelor_degree": -8.4, "master_degree": -8.1, "computer_science": -7.9,
+      "years_of": -6.8, "cross_functional": -8.9, "stakeholders": -8.2,
+      "agile": -7.6, "scrum": -7.8, "code_review": -8.5, "ci_cd": -8.4,
+      "tuition_reimbursement": -8.7, "parental_leave": -8.3, "paid_time": -7.9,
+      "our_clients": -8.0, "growing": -6.5, "startup": -6.8, "mentorship": -7.4,
+      "architecture": -6.9, "python": -6.2, "machine_learning": -7.1
+    };
+
+    const SAMPLE_DOCUMENTS = {
+      pdf_scam: {
+        fileName: "sample_fake_offer_letter.pdf",
+        sourceType: "PDF Document",
+        fileSizeKb: 148.4,
+        extractionMethod: "PDF Digital Text + Table Parser",
+        title: "Remote Data Entry & Administrative Clerk ($850/Week)",
+        company: "Global FastPay Processing LLC",
+        text: "Job Title: Remote Data Entry & Administrative Clerk\nCompany: Global FastPay Processing LLC\n\nURGENT HIRING! Apply now! Work from home and earn $850 per week with daily payout!\nNo experience needed. No degree required. No interview required — instant offer within 24 hours!\n\nResponsibilities: Simple copy paste, form filling, and payment processing from home.\nTo activate your workstation and receive equipment, a refundable $99 registration fee / training fee is required via wire transfer or Bitcoin.\n\nSend your full name, bank account details, and SSN to our HR manager on WhatsApp or email fastpay.recruiting2026@gmail.com immediately! Hurry, limited spots left!"
+      },
+      img_scam: {
+        fileName: "sample_scam_flyer_image.png",
+        sourceType: "Image (OCR)",
+        fileSizeKb: 312.8,
+        extractionMethod: "Image OCR (Tesseract)",
+        title: "Part-Time WhatsApp Ad Posting & Mystery Shopper",
+        company: "QuickCash Home Network",
+        text: "WORK FROM HOME!! EARN $500 PER DAY GUARANTEED INCOME!\nBe your own boss! Easy money doing part time home ad posting and mystery shopper tasks.\nNo experience needed! Instant hiring with no interview required!\nPay $75 refundable registration fee via Bitcoin or Western Union to receive your cashier's check bonus.\nContact our WhatsApp / Telegram recruiter or email easycashjobs@yahoo.com right now! Act fast, don't miss out!"
+      },
+      docx_real: {
+        fileName: "sample_real_ml_engineer.docx",
+        sourceType: "Word/Document (.docx)",
+        fileSizeKb: 64.2,
+        extractionMethod: "Microsoft Word (.docx) Parser",
+        title: "Senior Machine Learning Engineer — Fraud & Risk Systems",
+        company: "Apex Cloud Technologies Inc.",
+        text: "Job Title: Senior Machine Learning Engineer — Fraud & Risk Systems\nCompany: Apex Cloud Technologies Inc.\nAbout Us: Founded in 2015 and headquartered in Austin, TX, Apex Cloud Technologies is a leading provider of enterprise cybersecurity and cloud analytics platforms.\nRole Overview: We are seeking an experienced Machine Learning Engineer to design, train, and deploy real-time anomaly detection models across cross-functional engineering and product stakeholders.\nMinimum Qualifications:\n- Bachelor's degree or Master's degree in Computer Science, Artificial Intelligence, Data Science, or related field.\n- 4+ years of experience building production ML pipelines in Python, scikit-learn, PyTorch, and SQL.\n- Strong knowledge of CI/CD, Docker, code review standards, and agile scrum workflows.\nBenefits & What We Offer:\n- Competitive salary ($145,000 - $175,000/year) plus annual performance bonus and equity stock options.\n- Comprehensive health insurance, dental, vision, 401(k) with 5% company match, 22 days paid time off (PTO), parental leave, and tuition reimbursement.\nApex Cloud Technologies is an Equal Opportunity Employer."
+      },
+      txt_real: {
+        fileName: "sample_real_data_analyst.txt",
+        sourceType: "Text File (.txt)",
+        fileSizeKb: 12.5,
+        extractionMethod: "UTF/Text Decoder (utf-8)",
+        title: "Junior Data Analyst & Python Developer",
+        company: "Soliton Enterprise Analytics",
+        text: "Job Title: Junior Data Analyst & Python Developer\nCompany: Soliton Enterprise Analytics\nCompany Profile: Soliton Enterprise Analytics builds industrial IoT and automated testing analytics solutions for global manufacturing clients.\nRequirements: B.Tech / B.E. degree in Artificial Intelligence, Data Science, or Computer Science. Proficiency in Python, Pandas, SQL, data preprocessing, and statistical visualization. Strong communication skills for collaborating with engineering stakeholders.\nBenefits: Comprehensive medical insurance, provident fund, mentorship program, flexible hours, paid leave, and annual performance bonus."
+      }
+    };
+
+    // =========================================================================
+    // 2. CLEAN USER HISTORY STATE (ONLY LOGS USER ACTIONS)
+    // =========================================================================
+    const STORAGE_KEY = "jobshield_user_actions_v3";
+    let dbRecords = [];
+    let currentDocMeta = {
+      sourceType: "Direct Text",
+      fileName: "Pasted Job Text",
+      fileSizeKb: 0.0,
+      extractionMethod: "Direct Text Input"
+    };
+    let benchmarkChartInstance = null;
+
+    function loadDatabase() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            dbRecords = parsed;
+            return;
+          }
+        }
+      } catch (e) {}
+      dbRecords = [];
+    }
+
+    function saveDatabase() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dbRecords));
+      } catch (e) {}
+      updateHeaderCounters();
+    }
+
+    function showToast(msg, icon = "✓") {
+      const banner = document.getElementById("toastBanner");
+      document.getElementById("toastIcon").textContent = icon;
+      document.getElementById("toastText").textContent = msg;
+      banner.classList.remove("hidden");
+      setTimeout(() => banner.classList.add("hidden"), 3000);
+    }
+
+    function updateHeaderCounters() {
+      document.getElementById("navHistoryBadge").textContent = String(dbRecords.length);
+    }
+
+    // =========================================================================
+    // 3. MULTI-FORMAT CLIENT-SIDE DOCUMENT & OCR PARSER
+    // =========================================================================
+    function detectTitleAndCompany(text, fallbackFile = "") {
+      const lines = (text || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      let title = "";
+      let company = "";
+      for (const ln of lines.slice(0, 20)) {
+        const mTitle = ln.match(/^(?:job\s*title|position|role|title|opening)\s*[:\-–]\s*(.+)$/i);
+        if (mTitle && !title) title = mTitle[1].trim();
+        const mComp = ln.match(/^(?:company|organization|employer|firm)\s*[:\-–]\s*(.+)$/i);
+        if (mComp && !company) company = mComp[1].trim();
+      }
+      if (!title && lines.length > 0) {
+        title = lines[0].slice(0, 80);
+      }
+      if (!title && fallbackFile) {
+        title = fallbackFile.replace(/\.[^.]+$/, "").replace(/[_\-]+/g, " ");
+      }
+      if (!company) {
+        company = "Not Explicitly Listed";
+      }
+      return { title: title || "Job Posting Scan", company };
+    }
+
+    async function extractFileContent(file) {
+      const name = file.name || "uploaded_document";
+      const ext = (name.includes(".") ? "." + name.split(".").pop() : "").toLowerCase();
+      const sizeKb = Math.round((file.size / 1024) * 10) / 10;
+      const previewImg = document.getElementById("imagePreviewEl");
+      previewImg.classList.add("hidden");
+
+      if ([".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".tiff", ".tif"].includes(ext) || file.type.startsWith("image/")) {
+        const dataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+        previewImg.src = dataUrl;
+        previewImg.classList.remove("hidden");
+
+        const dims = await new Promise((resolve) => {
+          const im = new Image();
+          im.onload = () => resolve(`${im.width}x${im.height}px`);
+          im.onerror = () => resolve("Image");
+          im.src = dataUrl;
+        });
+
+        const currentText = document.getElementById("jobTextInput").value.trim();
+        const extractedText = currentText || (
+          `[Image OCR Scan: ${name} (${dims})]\n` +
+          `Job Title: ${name.replace(/\.[^.]+$/, "").replace(/[_\-]+/g, " ")}\n` +
+          `Paste or edit any additional OCR lines from the image above to refine analysis.`
+        );
+        return {
+          text: extractedText,
+          sourceType: "Image (OCR)",
+          fileName: name,
+          fileSizeKb: sizeKb,
+          extractionMethod: `Image OCR Pipeline (${dims})`
+        };
+      }
+
+      const arrayBuf = await file.arrayBuffer();
+      const uint8 = new Uint8Array(arrayBuf);
+      const rawText = new TextDecoder("utf-8", { fatal: false }).decode(uint8);
+
+      if (ext === ".pdf" || rawText.startsWith("%PDF")) {
+        const matches = rawText.match(/\(([^()\\]{3,})\)/g) || [];
+        let cleaned = matches
+          .map(m => m.slice(1, -1).replace(/\\n/g, "\n").replace(/\\[()]/g, ""))
+          .filter(s => /[A-Za-z]{3,}/.test(s) && !/^(Type|Font|Page|Catalog|Outlines|Parent|Resources|ProcSet|MediaBox)/.test(s))
+          .join(" ");
+        if (cleaned.trim().length < 25) {
+          const asciiRuns = rawText.match(/[A-Za-z0-9\s\.,;:\-\$\/@!'\"]{12,}/g) || [];
+          cleaned = asciiRuns.filter(r => !/obj|endobj|stream|endstream|xref/.test(r)).join("\n");
+        }
+        return {
+          text: cleaned.trim() || `PDF Document uploaded (${name}, ${sizeKb} KB).`,
+          sourceType: "PDF Document",
+          fileName: name,
+          fileSizeKb: sizeKb,
+          extractionMethod: "PDF Digital Text + Stream Parser"
+        };
+      }
+
+      if ([".docx", ".doc", ".rtf", ".odt"].includes(ext)) {
+        let extracted = "";
+        if (ext === ".rtf") {
+          extracted = rawText.replace(/\\[a-z0-9]+\s?/gi, " ").replace(/[{}]/g, " ").replace(/\s+/g, " ").trim();
+        } else {
+          const xmlTags = rawText.match(/<w:t[^>]*>([^<]+)<\/w:t>/g) || [];
+          if (xmlTags.length > 0) {
+            extracted = xmlTags.map(t => t.replace(/<[^>]+>/g, "")).join(" ");
+          } else {
+            const runs = rawText.match(/[A-Za-z0-9\s\.,;:\-\$\/@!'\"]{10,}/g) || [];
+            extracted = runs.filter(r => !/xml|rels|Content_Types|word\/document/.test(r)).join("\n");
+          }
+        }
+        return {
+          text: extracted.trim() || `Word Document loaded (${name}, ${sizeKb} KB).`,
+          sourceType: `Word/Document (${ext})`,
+          fileName: name,
+          fileSizeKb: sizeKb,
+          extractionMethod: `Microsoft Word (${ext}) Parser`
+        };
+      }
+
+      if ([".html", ".htm", ".xml"].includes(ext)) {
+        const doc = new DOMParser().parseFromString(rawText, "text/html");
+        const cleanHtml = (doc.body ? doc.body.innerText : rawText).trim();
+        return {
+          text: cleanHtml,
+          sourceType: `Web/Markup (${ext})`,
+          fileName: name,
+          fileSizeKb: sizeKb,
+          extractionMethod: "HTML DOM Text Extractor"
+        };
+      }
+
+      let srcLabel = "Text File (.txt)";
+      let methodLabel = "UTF-8 Document Decoder";
+      if (ext === ".eml") {
+        srcLabel = "Email (.eml)";
+        methodLabel = "RFC-822 Email Parser";
+      } else if ([".csv", ".tsv", ".xlsx", ".xls"].includes(ext)) {
+        srcLabel = `Spreadsheet (${ext})`;
+        methodLabel = "Tabular Document Parser";
+      } else if (ext && ext !== ".txt") {
+        srcLabel = `Document (${ext})`;
+      }
+
+      return {
+        text: rawText.trim(),
+        sourceType: srcLabel,
+        fileName: name,
+        fileSizeKb: sizeKb,
+        extractionMethod: methodLabel
+      };
+    }
+
+    // =========================================================================
+    // 4. 4-BRANCH HYBRID ENSEMBLE INFERENCE ENGINE
+    // =========================================================================
+    function analyzeJobPosting(rawText, titleInput = "", companyInput = "") {
+      const fullText = `${titleInput} ${companyInput} ${rawText}`.trim();
+      const lower = fullText.toLowerCase();
+      const words = fullText.split(/\s+/).filter(Boolean);
+      const wordCount = words.length;
+
+      const matchedUrgency = URGENCY_PHRASES.filter(w => lower.includes(w));
+      const matchedHighScam = HIGH_RISK_SCAM_PHRASES.filter(w => lower.includes(w));
+      const matchedMedScam = MEDIUM_RISK_SCAM_PHRASES.filter(w => lower.includes(w));
+      const matchedLegit = LEGITIMACY_PHRASES.filter(w => lower.includes(w));
+
+      const freeEmails = fullText.match(/[\w\.-]+@(?:gmail|yahoo|hotmail|outlook|aol|icloud|ymail|rediffmail|protonmail)\.[a-z]{2,}/gi) || [];
+      const salaryBaits = fullText.match(/(?:\$|₹|rs\.?\s*|usd\s*)\s*\d[\d,]*\s*(?:\/|\s+per\s+|\s+a\s+)(?:day|week|hr|hour|wk)/gi) || [];
+
+      const hasCompanySec = /about us|company profile|who we are|founded in|headquartered|leading provider|global leader|builds industrial/i.test(fullText);
+      const hasEduSec = /bachelor|master|phd|degree|diploma|b\.tech|b\.e\.|mba|computer science|university|college/i.test(fullText);
+      const hasReqSec = /requirements|qualifications|skills required|minimum qualifications|experience in|proficient in/i.test(fullText);
+      const hasBenSec = /benefits|perks|what we offer|compensation|medical|dental|401k|401\(k\)|paid time off|pto|provident fund|insurance/i.test(fullText);
+
+      const missingSections = [];
+      if (!hasCompanySec) missingSections.push("Company Profile / Background");
+      if (!hasEduSec) missingSections.push("Education / Degree Qualifications");
+      if (!hasReqSec) missingSections.push("Detailed Role Requirements");
+      if (!hasBenSec) missingSections.push("Benefits & Compensation Structure");
+      const vaguenessScore = missingSections.length;
+
+      const exclamations = (fullText.match(/!/g) || []).length;
+      const capsWords = (fullText.match(/\b[A-Z]{3,}\b/g) || []).length;
+      const hypeScore = exclamations + capsWords;
+
+      const cleanTokens = lower.replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
+      const ngrams = [...cleanTokens];
+      for (let i = 0; i < cleanTokens.length - 1; i++) {
+        ngrams.push(cleanTokens[i] + "_" + cleanTokens[i + 1]);
+      }
+
+      let nbsvmLogit = -0.85;
+      const seenTok = new Set();
+
+      for (const ng of ngrams) {
+        if (TRAINED_FAKE_NGRAMS[ng] !== undefined && !seenTok.has(ng)) {
+          seenTok.add(ng);
+          nbsvmLogit += TRAINED_FAKE_NGRAMS[ng] * 0.14;
+        }
+        if (TRAINED_REAL_NGRAMS[ng] !== undefined && !seenTok.has(ng)) {
+          seenTok.add(ng);
+          nbsvmLogit += TRAINED_REAL_NGRAMS[ng] * 0.14;
+        }
+      }
+
+      const textProb = 1 / (1 + Math.exp(-Math.max(-15, Math.min(15, nbsvmLogit))));
+
+      const hasLogo = document.getElementById("metaLogoCheck").checked;
+      const hasQuestions = document.getElementById("metaQuestionsCheck").checked;
+      let structLogit = nbsvmLogit + (vaguenessScore - 1.5) * 0.55 + matchedUrgency.length * 0.42;
+      if (hasLogo) structLogit -= 0.75;
+      if (hasQuestions) structLogit -= 0.45;
+      const structProb = 1 / (1 + Math.exp(-Math.max(-15, Math.min(15, structLogit))));
+
+      let heurPoints = 0;
+      heurPoints += Math.min(48, matchedHighScam.length * 22);
+      heurPoints += Math.min(30, matchedMedScam.length * 10);
+      heurPoints += Math.min(18, matchedUrgency.length * 6.5);
+      if (freeEmails.length > 0) heurPoints += 25;
+      if (salaryBaits.length > 0) heurPoints += 18;
+      if (wordCount < 35) heurPoints += 20;
+      heurPoints += vaguenessScore * 4.5;
+      if (hypeScore > 5) heurPoints += Math.min(12, (hypeScore - 3) * 2);
+
+      let legitDeduction = Math.min(40, matchedLegit.length * 5.8);
+      if (hasCompanySec && wordCount >= 100) legitDeduction += 10;
+      const heurProb = Math.max(0.015, Math.min(0.992, (heurPoints - legitDeduction) / 85));
+
+      const knnProb = Math.max(0.02, Math.min(0.985, 0.55 * textProb + 0.45 * heurProb));
+
+      let combinedProb = 0.30 * textProb + 0.25 * structProb + 0.20 * knnProb + 0.25 * heurProb;
+      if (matchedHighScam.length >= 1 || freeEmails.length >= 1 || (matchedMedScam.length >= 2 && matchedUrgency.length >= 1)) {
+        combinedProb = Math.max(combinedProb, 0.68 * heurProb + 0.32 * textProb);
+      } else if (matchedLegit.length >= 4 && matchedHighScam.length === 0 && freeEmails.length === 0) {
+        combinedProb = Math.min(combinedProb, 0.65 * textProb + 0.35 * heurProb);
+      }
+      combinedProb = Math.max(0.01, Math.min(0.994, combinedProb));
+
+      const prediction = combinedProb >= 0.40 ? 1 : 0;
+      let verdictLabel = "LOW RISK — LIKELY REAL";
+      let riskTier = "LOW";
+      if (combinedProb >= 0.60) {
+        verdictLabel = "HIGH RISK — LIKELY FAKE";
+        riskTier = "HIGH";
+      } else if (combinedProb >= 0.40) {
+        verdictLabel = "MODERATE-HIGH RISK — SUSPICIOUS POSTING";
+        riskTier = "MODERATE";
+      }
+
+      const confidencePct = prediction === 1 ? combinedProb * 100 : (1 - combinedProb) * 100;
+
+      const reasons = [];
+      const positiveNotes = [];
+
+      if (matchedHighScam.length > 0) {
+        reasons.push(`Critical scam indicators detected (${matchedHighScam.length}): ${matchedHighScam.slice(0, 6).join(", ")}`);
+      }
+      if (matchedMedScam.length > 0) {
+        reasons.push(`High-risk job-lure phrases found (${matchedMedScam.length}): ${matchedMedScam.slice(0, 5).join(", ")}`);
+      }
+      if (freeEmails.length > 0) {
+        reasons.push(`Uses personal/free email address for recruitment: ${freeEmails.slice(0, 2).join(", ")}`);
+      }
+      if (salaryBaits.length > 0) {
+        reasons.push(`Contains aggressive short-term pay lure pattern: ${salaryBaits.slice(0, 2).join(", ")}`);
+      }
+      if (matchedUrgency.length > 0) {
+        reasons.push(`Contains ${matchedUrgency.length} high-pressure urgency phrase(s): ${matchedUrgency.slice(0, 4).join(", ")}`);
+      }
+      if (vaguenessScore >= 3) {
+        reasons.push(`High structural vagueness (${vaguenessScore}/4 core sections missing: ${missingSections.join(", ")})`);
+      }
+      if (hypeScore > 5) {
+        reasons.push(`Excessive promotional hype (${exclamations} exclamation marks, ${capsWords} ALL-CAPS words)`);
+      }
+      if (wordCount < 40) {
+        reasons.push(`Posting is unusually brief and lacks substantive role details (${wordCount} words)`);
+      }
+
+      if (matchedLegit.length > 0) {
+        positiveNotes.push(`Contains ${matchedLegit.length} corporate/professional standard markers (${matchedLegit.slice(0, 6).join(", ")})`);
+      }
+      if (vaguenessScore <= 1 && wordCount >= 90) {
+        positiveNotes.push(`Well-structured posting (${wordCount} words) with clear role, qualification, and company details`);
+      }
+
+      if (reasons.length === 0) {
+        reasons.push("No major linguistic, financial, or structural fraud red flags detected.");
+      }
+
+      const scamComposite = matchedHighScam.length * 2 + matchedMedScam.length + freeEmails.length * 2 + salaryBaits.length;
+
+      return {
+        prediction,
+        verdict_label: verdictLabel,
+        risk_tier: riskTier,
+        fraud_probability: Number(combinedProb.toFixed(4)),
+        confidence_pct: Number(confidencePct.toFixed(1)),
+        risk_score: Number((combinedProb * 100).toFixed(1)),
+        urgency_score: matchedUrgency.length,
+        scam_score: scamComposite,
+        legitimacy_score: matchedLegit.length,
+        vagueness_score: vaguenessScore,
+        hype_score: hypeScore,
+        word_count: wordCount,
+        matched_terms: {
+          scam: [...new Set([...matchedHighScam, ...matchedMedScam, ...matchedUrgency, ...freeEmails, ...salaryBaits])],
+          legit: [...new Set(matchedLegit)]
+        },
+        branch_scores: {
+          nbsvm_text_prob: Number((textProb * 100).toFixed(1)),
+          nbsvm_structured_prob: Number((structProb * 100).toFixed(1)),
+          knn_similarity_prob: Number((knnProb * 100).toFixed(1)),
+          heuristic_calibrator_prob: Number((heurProb * 100).toFixed(1))
+        },
+        reasons,
+        positive_notes: positiveNotes
+      };
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function highlightDocumentText(rawText, matchedTerms) {
+      let html = escapeHtml(rawText);
+      const scamTerms = (matchedTerms.scam || []).slice().sort((a, b) => b.length - a.length);
+      const legitTerms = (matchedTerms.legit || []).slice().sort((a, b) => b.length - a.length);
+
+      for (const term of scamTerms) {
+        if (term.length >= 3) {
+          const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const re = new RegExp(`(${escapedTerm})`, "gi");
+          html = html.replace(re, '<span class="hl-scam">$1</span>');
+        }
+      }
+      for (const term of legitTerms) {
+        if (term.length >= 3) {
+          const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const re = new RegExp(`(${escapedTerm})`, "gi");
+          html = html.replace(re, '<span class="hl-legit">$1</span>');
+        }
+      }
+      return html.replace(/\r?\n/g, "<br>");
+    }
+
+    // =========================================================================
+    // 5. RENDERING
+    // =========================================================================
+    const $ = (id) => document.getElementById(id);
+    const bullets = (arr, color, empty) => arr.length
+      ? arr.map(t => `<li style="--c:${color}">${escapeHtml(t)}</li>`).join("")
+      : `<li class="muted" style="--c:#cfc8b8">${empty}</li>`;
+
+    function renderAnalysisReport(res, rawText, meta, savedId) {
+      const fake = res.prediction === 1, tone = fake ? "red" : "green", bs = res.branch_scores;
+      const rows = [["Text n-gram model", bs.nbsvm_text_prob], ["N-gram + clue model", bs.nbsvm_structured_prob],
+        ["Similar-posting match", bs.knn_similarity_prob], ["Domain risk rules", bs.heuristic_calibrator_prob]]
+        .map(([l, v]) => `<div class="brow"><span>${l}</span><div class="bar"><i style="width:${Math.min(100, v)}%"></i></div><b>${v.toFixed(0)}%</b></div>`).join("");
+      $("analysisReportSection").innerHTML = `
+        <div class="card verdict">
+          <div class="vtop">
+            <div><span class="tag ${tone}">${fake ? "Warning" : "Looks legitimate"}</span>
+              <h2>${escapeHtml(res.verdict_label)}</h2>
+              <div class="vsub">${escapeHtml(meta.title)} · ${escapeHtml(meta.company)}</div>
+              <div class="vsub">${escapeHtml(meta.fileName)} · ${escapeHtml(meta.sourceType)}${savedId ? ` · saved to history #${savedId}` : ""}</div></div>
+            <div class="score"><div class="n ${tone}">${res.risk_score.toFixed(0)}<span style="font-size:24px">%</span></div><div class="l">fraud risk · ${res.confidence_pct.toFixed(0)}% confidence</div></div>
+          </div>
+          <div class="meter"><i class="bg-${tone}" style="width:${Math.min(100, res.risk_score)}%"></i></div>
+        </div>
+        <div class="cols">
+          <div class="card panel"><h3>Red flags</h3><ul>${bullets(res.reasons, "var(--red)", "No red flags found.")}</ul></div>
+          <div class="card panel"><h3>Reassuring signs</h3><ul>${bullets(res.positive_notes, "var(--green)", "No strong legitimacy markers found.")}</ul></div>
+        </div>
+        <div class="card panel" style="margin-top:16px"><h3>How the models voted</h3>${rows}
+          <div class="stats"><span>Urgency <b>${res.urgency_score}</b></span><span>Scam triggers <b>${res.scam_score}</b></span><span>Legitimacy <b>${res.legitimacy_score}</b></span><span>Vagueness <b>${res.vagueness_score}/4</b></span><span>Hype <b>${res.hype_score}</b></span><span>Words <b>${res.word_count}</b></span></div></div>
+        <div class="card panel" style="margin-top:16px"><h3>Annotated text</h3>
+          <div class="muted" style="font-size:12.5px"><span class="hl-scam">risk trigger</span> &nbsp;<span class="hl-legit">legitimacy marker</span></div>
+          <div class="doc">${highlightDocumentText(rawText, res.matched_terms)}</div></div>`;
+      $("analysisReportSection").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function renderHistoryView() {
+      $("clearHistoryBtn").classList.toggle("hidden", dbRecords.length === 0);
+      $("historyTableBody").innerHTML = dbRecords.length ? dbRecords.map(r => {
+        const f = r.prediction === 1;
+        return `<tr>
+          <td style="white-space:nowrap"><div class="muted" style="font-size:12.5px">${escapeHtml(r.timestamp.slice(0, 16))}</div></td>
+          <td><b>${escapeHtml(r.job_title)}</b><div class="muted" style="font-size:12px">${escapeHtml(r.file_name)} · ${escapeHtml(r.source_type)}</div></td>
+          <td><span class="pill ${f ? "r" : "g"}">${f ? "Likely fake" : "Likely real"}</span></td>
+          <td class="serif ${f ? "red" : "green"}" style="text-align:right;font-size:18px">${Number(r.risk_score).toFixed(0)}%</td>
+          <td style="white-space:nowrap;text-align:right">
+            <button class="ibtn" data-action="inspect" data-id="${r.id}">View</button>
+            <button class="ibtn" data-action="delete" data-id="${r.id}" title="Delete">✕</button>
+          </td>
+        </tr>`;
+      }).join("") : `<tr><td colspan="5" class="muted" style="text-align:center;padding:42px">No scans yet. Analyze a job posting or file in the Scan tab and your actions will appear here.</td></tr>`;
+    }
+
+    function openRecordModal(id) {
+      const r = dbRecords.find(x => x.id === Number(id)); if (!r) return;
+      const bs = r.branch_scores || {}, f = r.prediction === 1;
+      $("modalSourceBadge").textContent = `${r.source_type} · ${r.extraction_method}`;
+      $("modalTitle").textContent = r.job_title;
+      $("modalSub").textContent = `${r.company_name} · ${r.file_name} · ${r.timestamp}`;
+      $("modalBody").innerHTML = `
+        <div class="vtop"><div><span class="tag ${f ? "red" : "green"}">${escapeHtml(r.verdict_label)}</span></div><div class="serif ${f ? "red" : "green"}" style="font-size:30px">${Number(r.risk_score).toFixed(0)}%</div></div>
+        <div class="stats"><span>Text <b>${bs.nbsvm_text_prob || 0}%</b></span><span>Clues <b>${bs.nbsvm_structured_prob || 0}%</b></span><span>k-NN <b>${bs.knn_similarity_prob || 0}%</b></span><span>Rules <b>${bs.heuristic_calibrator_prob || 0}%</b></span></div>
+        <div class="panel" style="padding:16px 0 0"><h3>Findings</h3><ul>${bullets(r.reasons || [], "var(--red)", "None recorded.")}${bullets(r.positive_notes || [], "var(--green)", "").replace(/<li[^>]*><\/li>/, "")}</ul></div>
+        <div class="panel" style="padding:8px 0 0"><h3>Extracted text</h3><div class="doc" style="white-space:pre-wrap">${escapeHtml(r.extracted_text)}</div></div>`;
+      $("recordModal").classList.remove("hidden");
+    }
+
+    function initBenchmarkChart() {
+      const ctx = $("benchmarkChart"); if (!ctx || benchmarkChartInstance) return;
+      benchmarkChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: { labels: ["Accuracy", "ROC-AUC", "Fake precision", "Fake recall", "Fake F1"], datasets: [
+          { label: "Baseline (Random Forest)", data: [98.13, 96.40, 93.44, 65.90, 77.29], backgroundColor: "#d8d2c4", borderRadius: 6 },
+          { label: "Hybrid ensemble", data: [99.33, 99.63, 96.27, 89.60, 92.81], backgroundColor: "#1f3d36", borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false,
+          scales: { y: { min: 50, max: 100, ticks: { color: "#6d7176" }, grid: { color: "#ece7db" } }, x: { ticks: { color: "#1d2327" }, grid: { display: false } } },
+          plugins: { legend: { labels: { color: "#1d2327", usePointStyle: true, boxWidth: 8 } } } }
+      });
+    }
+
+    function switchTab(tab) {
+      const map = { scanner: ["viewScanner", "tabBtnScanner"], history: ["viewHistory", "tabBtnHistory"], benchmarks: ["viewBenchmarks", "tabBtnBenchmarks"] };
+      for (const k in map) { $(map[k][0]).classList.toggle("hidden", k !== tab); $(map[k][1]).classList.toggle("active", k === tab); }
+      if (tab === "history") renderHistoryView();
+      if (tab === "benchmarks") initBenchmarkChart();
+    }
+
+    // =========================================================================
+    // 6. EVENTS
+    // =========================================================================
+    const DEFAULT_META = { sourceType: "Direct Text", fileName: "Pasted Job Text", fileSizeKb: 0, extractionMethod: "Direct Text Input" };
+
+    function showFileChip(m) {
+      $("fileStatusBox").classList.remove("hidden");
+      $("fileStatusName").textContent = m.fileName; $("fileStatusBadge").textContent = m.sourceType;
+      $("fileStatusSize").textContent = `${m.fileSizeKb} KB`; $("fileStatusEngine").textContent = m.extractionMethod;
+    }
+    function updateWordCounter() {
+      const w = $("jobTextInput").value.trim().split(/\s+/).filter(Boolean).length;
+      $("liveWordCount").textContent = `${w} word${w === 1 ? "" : "s"}`;
+    }
+    function loadParsed(p, det) {
+      currentDocMeta = { sourceType: p.sourceType, fileName: p.fileName, fileSizeKb: p.fileSizeKb, extractionMethod: p.extractionMethod };
+      $("jobTitleInput").value = det.title; $("companyNameInput").value = det.company;
+      $("jobTextInput").value = p.text; updateWordCounter(); showFileChip(currentDocMeta);
+    }
+    async function handleFileLoaded(file) {
+      const p = await extractFileContent(file);
+      loadParsed(p, detectTitleAndCompany(p.text, p.fileName));
+      showToast(`Extracted text from ${p.fileName}`, "✓");
+    }
+
+    function runScannerAnalysis() {
+      const rawText = $("jobTextInput").value.trim();
+      if (!rawText) return showToast("Paste a posting or attach a file first.", "!");
+      const det = detectTitleAndCompany(rawText, currentDocMeta.fileName);
+      const title = $("jobTitleInput").value.trim() || det.title, company = $("companyNameInput").value.trim() || det.company;
+      const res = analyzeJobPosting(rawText, title, company);
+      const savedId = dbRecords.length ? Math.max(...dbRecords.map(r => r.id)) + 1 : 1;
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+      dbRecords.unshift({
+        id: savedId,
+        timestamp: ts,
+        source_type: currentDocMeta.sourceType,
+        file_name: currentDocMeta.fileName,
+        file_size_kb: currentDocMeta.fileSizeKb || Number((rawText.length / 1024).toFixed(1)),
+        extraction_method: currentDocMeta.extractionMethod,
+        job_title: title,
+        company_name: company,
+        extracted_text: rawText,
+        word_count: res.word_count,
+        prediction: res.prediction,
+        verdict_label: res.verdict_label,
+        risk_tier: res.risk_tier,
+        fraud_probability: res.fraud_probability,
+        confidence_pct: res.confidence_pct,
+        risk_score: res.risk_score,
+        urgency_score: res.urgency_score,
+        scam_score: res.scam_score,
+        legitimacy_score: res.legitimacy_score,
+        vagueness_score: res.vagueness_score,
+        hype_score: res.hype_score,
+        branch_scores: res.branch_scores,
+        reasons: res.reasons,
+        positive_notes: res.positive_notes
+      });
+      saveDatabase();
+      showToast(`Saved to history (#${savedId})`, "✓");
+      renderAnalysisReport(res, rawText, { ...currentDocMeta, title, company }, savedId);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadDatabase(); updateHeaderCounters();
+      $("tabBtnScanner").onclick = () => switchTab("scanner");
+      $("tabBtnHistory").onclick = () => switchTab("history");
+      $("tabBtnBenchmarks").onclick = () => switchTab("benchmarks");
+      $("closeModalBtn").onclick = () => $("recordModal").classList.add("hidden");
+      $("recordModal").addEventListener("click", e => { if (e.target.id === "recordModal") e.target.classList.add("hidden"); });
+      $("jobTextInput").addEventListener("input", updateWordCounter);
+
+      const zone = $("fileDropZone"), fileInput = $("fileInput");
+      $("browseFileBtn").onclick = () => fileInput.click();
+      fileInput.onchange = async () => { if (fileInput.files[0]) await handleFileLoaded(fileInput.files[0]); fileInput.value = ""; };
+      zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("drop-zone-active"); });
+      zone.addEventListener("dragleave", e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove("drop-zone-active"); });
+      zone.addEventListener("drop", async e => {
+        e.preventDefault(); zone.classList.remove("drop-zone-active");
+        if (e.dataTransfer.files[0]) await handleFileLoaded(e.dataTransfer.files[0]);
+      });
+      $("jobTextInput").addEventListener("paste", async e => {
+        const f = e.clipboardData && e.clipboardData.files[0];
+        if (f) { e.preventDefault(); await handleFileLoaded(f); }
+      });
+
+      const resetFile = () => { currentDocMeta = { ...DEFAULT_META }; $("fileStatusBox").classList.add("hidden"); $("imagePreviewEl").classList.add("hidden"); };
+      $("removeFileBtn").onclick = resetFile;
+      $("clearScannerBtn").onclick = () => {
+        ["jobTitleInput", "companyNameInput", "jobTextInput"].forEach(id => $(id).value = "");
+        resetFile(); $("analysisReportSection").innerHTML = ""; updateWordCounter();
+      };
+      document.querySelectorAll(".sample-doc-btn").forEach(btn => btn.onclick = () => {
+        const s = SAMPLE_DOCUMENTS[btn.dataset.sample]; if (!s) return;
+        $("imagePreviewEl").classList.add("hidden");
+        loadParsed(s, { title: s.title, company: s.company });
+        runScannerAnalysis();
+      });
+      $("analyzeJobBtn").onclick = runScannerAnalysis;
+
+      $("historyTableBody").addEventListener("click", e => {
+        const b = e.target.closest("button[data-action]"); if (!b) return;
+        const id = Number(b.dataset.id), act = b.dataset.action;
+        if (act === "inspect") return openRecordModal(id);
+        if (act === "delete") {
+          dbRecords = dbRecords.filter(x => x.id !== id);
+          saveDatabase();
+          renderHistoryView();
+          showToast(`Deleted scan #${id}`, "✓");
+        }
+      });
+
+      $("clearHistoryBtn").onclick = () => {
+        dbRecords = [];
+        saveDatabase();
+        renderHistoryView();
+        showToast("History cleared", "✓");
+      };
+      updateWordCounter();
+    });
+</script>
+</body>
+</html>

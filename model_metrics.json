@@ -1,0 +1,28 @@
+{
+  "dataset_total": 17880,
+  "train_size": 14304,
+  "test_size": 3576,
+  "vocab_size": 75000,
+  "threshold": 0.4,
+  "accuracy": 99.33,
+  "roc_auc": 99.63,
+  "fake_precision": 96.27,
+  "fake_recall": 89.6,
+  "fake_f1": 92.81,
+  "real_precision": 99.47,
+  "real_recall": 99.82,
+  "real_f1": 99.65,
+  "confusion_matrix": {
+    "tn": 3397,
+    "fp": 6,
+    "fn": 18,
+    "tp": 155
+  },
+  "baseline_comparison": {
+    "baseline_accuracy": 98.13,
+    "baseline_fake_precision": 93.44,
+    "baseline_fake_recall": 65.9,
+    "baseline_fake_f1": 77.29
+  },
+  "training_seconds": 60.32
+}
